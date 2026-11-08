@@ -45,8 +45,7 @@ python -m http.server 8000 --directory docs
 
 Open http://localhost:8000/index.html. Serve the whole output folder: the app
 needs its HTML, JavaScript worker, and `.resources.zip` file. Opening the HTML
-with a `file://` URL will not work. The first visit downloads Python, Panel,
-Bokeh, and NumPy from their CDNs; allow the loading indicator to finish before
+with a `file://` URL will not work. The first visit downloads Python and NumPy from their CDNs, plus the bundled Panel and Bokeh wheels; allow the loading indicator to finish before
 using controls. Browser caching reduces later download costs. Runtime packages
 must be available for Pyodide; its NumPy version is chosen by the Pyodide
 runtime rather than the native Python pin in `requirements.txt`.
@@ -59,3 +58,5 @@ site is https://jinwar.github.io/AppliedGeophysics_demos/.
 
 Generated `docs/` files are workflow artifacts, not hand-maintained source.
 The optional Render configuration remains available for server deployments.
+
+The build bundles matching Panel and Bokeh wheels in the app resource archive. It validates both wheels and fails early if downloads are unavailable, so a successful deployment cannot rely on a missing Bokeh CDN wheel. Browser startup preserves installation errors instead of continuing with an incomplete environment.

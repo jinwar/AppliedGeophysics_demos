@@ -2,14 +2,36 @@
 from pathlib import Path
 import os
 import sys
+import subprocess
+import tempfile
+import urllib.request
+import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 os.chdir(ROOT)
 sys.path.insert(0, str(ROOT))
+import panel.io.convert as converter
 from panel.io.convert import convert_app
 
 OUT = ROOT / 'docs'
 OUT.mkdir(exist_ok=True)
+# Package the exact Python wheels with the site. The converter's default
+# Bokeh CDN wheel may not exist for the installed Bokeh release.
+wheel_dir = Path(tempfile.mkdtemp(prefix='panel-browser-wheels-'))
+subprocess.run([sys.executable, '-m', 'pip', 'download', '--no-deps',
+                '--only-binary=:all:', '--dest', str(wheel_dir),
+                f'bokeh=={converter.BOKEH_VERSION}'], check=True)
+bokeh_wheel = wheel_dir / f'bokeh-{converter.BOKEH_VERSION}-py3-none-any.whl'
+panel_wheel = wheel_dir / f'panel-{converter.PY_VERSION}-py3-none-any.whl'
+with urllib.request.urlopen(converter.PANEL_CDN_WHL, timeout=60) as response:
+    panel_wheel.write_bytes(response.read())
+for wheel in (bokeh_wheel, panel_wheel):
+    with zipfile.ZipFile(wheel) as archive:
+        if archive.testzip() is not None:
+            raise RuntimeError(f'Corrupt wheel: {wheel.name}')
+# Panel's converter automatically packs file: requirements into its ZIP.
+converter.BOKEH_CDN_WHL = bokeh_wheel.as_uri()
+converter.PANEL_CDN_WHL = panel_wheel.as_uri()
 convert_app(
     'sampling_browser.py', dest_path=str(OUT), runtime='pyodide-worker',
     requirements=['numpy'],
@@ -21,6 +43,24 @@ required = ['sampling_browser.html', 'sampling_browser.js', 'sampling_browser.re
 for name in required:
     if not (OUT / name).is_file():
         raise RuntimeError(f'Missing conversion output: {name}')
+# Stop on the original installation error instead of masking it as a later
+# ModuleNotFoundError. Assert the template matches our pinned Panel version.
+worker = OUT / 'sampling_browser.js'
+js = worker.read_text()
+old = """      type: 'status',
+      msg: `Error while installing packages`
+    });
+  }"""
+new = """      type: 'error',
+      msg: `Python package installation failed: ${e}`
+    });
+    return;
+  }"""
+if old not in js:
+    raise RuntimeError('Panel worker template changed; review error handling')
+worker.write_text(js.replace(old, new))
+if 'emfs:packed_wheels/bokeh-' not in js or 'emfs:packed_wheels/panel-' not in js:
+    raise RuntimeError('Browser wheels were not bundled')
 (OUT / '.nojekyll').touch()
 (OUT / 'index.html').write_text('''<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
