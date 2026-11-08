@@ -7,6 +7,8 @@ MAX_SECONDS = 10
 
 
 def example(kind, fs=16000, duration=3):
+    if kind == 'Do–Re–Mi: piano and violin':
+        return instrument_example(fs)
     t = np.arange(round(fs*duration))/fs
     if kind == 'Pure tone':
         y = .6*np.sin(2*np.pi*440*t)
@@ -95,3 +97,25 @@ def waveform_view(y, fs, start, end, max_points=12000):
             indices.extend(sorted({pos+int(np.argmin(values)),pos+int(np.argmax(values))}))
         indices=np.unique([*indices,right-1])
     return dict(time=indices/fs,amplitude=y[indices])
+
+
+def instrument_example(fs=16000):
+    """Six one-second slots: C4/D4/E4, piano-like then violin-like per pitch."""
+    audio=np.zeros(round(6*fs))
+    t=np.arange(round(.85*fs))/fs
+    release=np.minimum(1, np.maximum(0,(.85-t)/.10))
+    for slot, frequency in enumerate(np.repeat([261.625565,293.664768,329.627557],2)):
+        if slot%2==0:
+            # Fast hammer attack, decaying amplitude and faster-decaying overtones.
+            sound=sum(np.exp(-t*(2.8+.45*k))*np.sin(2*np.pi*k*frequency*t)/k**1.6
+                      for k in range(1,13) if k*frequency<fs/2)
+            sound*=np.minimum(t/.008,1)*release
+        else:
+            # Sustained bowed harmonics, gradual attack and gentle 5 Hz vibrato.
+            phase=2*np.pi*frequency*(t+.003*(1-np.cos(2*np.pi*5*t))/(2*np.pi*5))
+            sound=sum(np.sin(k*phase)/k**1.1 for k in range(1,19) if k*frequency<fs/2)
+            sound*=np.minimum(t/.12,1)*release
+        sound*=.75/max(np.max(np.abs(sound)),1e-12)
+        start=round(slot*fs)
+        audio[start:start+len(sound)]=sound
+    return audio,fs

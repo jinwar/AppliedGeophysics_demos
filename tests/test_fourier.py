@@ -75,3 +75,14 @@ def test_waveform_zoom_restores_samples_and_preserves_overview_extrema():
     np.testing.assert_array_equal(np.diff(indices),1)
     np.testing.assert_array_equal(detail['amplitude'],y[indices])
     assert indices[0]<=48000 and indices[-1]>=48480
+
+
+def test_instrument_sequence_pitch_order_and_silences():
+    y,fs=example('Do–Re–Mi: piano and violin')
+    assert len(y)==6*fs and np.max(np.abs(y))<=.750001
+    for slot, expected in enumerate(np.repeat([261.625565,293.664768,329.627557],2)):
+        segment=y[round((slot+.15)*fs):round((slot+.75)*fs)]
+        d=analyze(segment,fs)
+        assert d['dominant']==pytest.approx(expected,abs=3)
+        assert np.all(y[round((slot+.86)*fs):(slot+1)*fs]==0)
+    assert not np.allclose(y[:fs],y[fs:2*fs])

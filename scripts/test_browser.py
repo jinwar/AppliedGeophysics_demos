@@ -66,6 +66,11 @@ try:
             page.get_by_role('button',name='Download this sound (WAV)',exact=True).click()
         assert event.value.suggested_filename=='fourier_audio.wav'
         print('WAV upload and download passed',flush=True)
+        page.get_by_role('combobox',name='Example sound',exact=True).select_option(label='Do–Re–Mi: piano and violin')
+        page.get_by_role('button',name='Load example',exact=True).click()
+        page.get_by_text('Source: Do–Re–Mi: piano and violin',exact=False).wait_for(timeout=30000)
+        page.get_by_text('6.00 s ·',exact=False).wait_for(timeout=15000)
+        print('Piano and violin sequence loaded and analyzed',flush=True)
         browser.close()
 finally:
     server.shutdown()

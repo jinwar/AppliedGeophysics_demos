@@ -14,7 +14,7 @@ from shared.style import template, plot, TEAL
 pn.extension(sizing_mode='stretch_width')
 
 def create_app(browser=False):
-    source=pn.widgets.Select(name='Example sound',options=['Pure tone','Two simultaneous tones','Two sequential tones','Chirp: rising pitch'],value='Pure tone')
+    source=pn.widgets.Select(name='Example sound',options=['Pure tone','Two simultaneous tones','Two sequential tones','Chirp: rising pitch','Do–Re–Mi: piano and violin'],value='Pure tone')
     load=pn.widgets.Button(name='Load example',button_type='primary')
     upload=pn.widgets.FileInput(name='Upload PCM WAV (max 20 MB)',accept='.wav')
     mic=Microphone(height=125,sizing_mode='stretch_width')
@@ -109,7 +109,8 @@ def create_app(browser=False):
 2. Compare **Two simultaneous tones** with **Two sequential tones**. Both contain 440 and 880 Hz; which plot tells you when each tone occurs?
 3. Load **Chirp**, then change the STFT window from 16 to 2048 ms. Compare frequency sharpness with time smearing.
 4. Record a sustained vowel or hum. Identify a fundamental and its harmonics. The largest peak need not be the fundamental.
-5. Record a clap. Why does a short event occupy many frequencies?''')),
+5. Record a clap. Why does a short event occupy many frequencies?
+6. Load **Do–Re–Mi: piano and violin**. The order is **Do piano → Do violin → Re piano → Re violin → Mi piano → Mi violin**. Each one-second slot has 0.85 s of sound and 0.15 s of silence. Do, Re, Mi are C4 (261.63 Hz), D4 (293.66 Hz), E4 (329.63 Hz). These are synthesized instrument-like tones, not real recordings: the piano has a fast attack and decaying harmonics; the violin has a slower attack, sustained harmonics and gentle vibrato. Compare each pair with a 64 or 128 ms window and a 2 or 5 kHz frequency limit.''')),
         ('How to read the analysis',pn.pane.Markdown('''The waveform shows normalized digital amplitude, not calibrated sound pressure. Zoom into a few milliseconds to see individual oscillations. The overview retains local extrema at their actual sample times; zooming reveals all samples in the visible interval. This display reduction does not affect the FFT or STFT. The FFT and STFT remove the recording's mean (DC). One-sided amplitudes are corrected for the window's coherent gain; DC and Nyquist are not doubled. The spectrogram uses **20 log₁₀(amplitude / peak STFT amplitude)**, so 0 dB is the strongest time-frequency bin in this sound, not 0 dB SPL.
 
 STFT windows are centered on the displayed time coordinates; only complete windows are used. Windows longer than the recording are shortened to its duration. Longer windows give finer frequency spacing but smear changes in time. Greater overlap gives more closely spaced snapshots; it does not improve the underlying frequency resolution. A Hann window reduces leakage at the expense of a wider spectral peak. The displayed bin spacing is not the same as the minimum resolvable frequency separation.
