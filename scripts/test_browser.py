@@ -35,11 +35,7 @@ try:
         page.get_by_text('Source: Uploaded WAV',exact=False).wait_for(timeout=30000)
         # Keep the analysis scroll container fixed while changing sidebar controls.
         page.evaluate("""() => {
-            window.analysisScroller = [...document.querySelectorAll('*')].find(
-                el => el.id !== 'sidebar' && el.scrollHeight > el.clientHeight + 300
-                && ['auto','scroll'].includes(getComputedStyle(el).overflowY)
-                && el.contains(document.querySelector('audio'))
-            ) || document.scrollingElement;
+            window.analysisScroller = document.querySelector('#main');
             window.analysisScroller.scrollTop = 300;
         }""")
         before=page.evaluate('window.analysisScroller.scrollTop')
