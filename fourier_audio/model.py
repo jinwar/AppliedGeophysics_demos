@@ -65,7 +65,9 @@ def analyze(y,fs,window_ms=64,overlap=.75,window='Hann'):
     n=min(len(y),max(32,round(fs*window_ms/1000)))
     hop=max(1,round(n*(1-overlap)))
     starts=np.arange(0,len(y)-n+1,hop)
-    frames=np.lib.stride_tricks.sliding_window_view(y,n)[::hop]
+    # Build only the requested frames. A view of EVERY possible window
+    # exceeds Pyodide's 32-bit array-size limit before hop slicing occurs.
+    frames=np.stack([y[start:start+n] for start in starts])
     taper=np.hanning(n) if window=='Hann' else np.ones(n)
     spec=np.abs(np.fft.rfft(frames*taper,axis=1))/taper.sum()
     spec[:,1:] *= 2

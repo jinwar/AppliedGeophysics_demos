@@ -27,7 +27,7 @@ try:
         page.get_by_text('Source: Microphone recording',exact=False).wait_for(timeout=30000)
         print('Synthetic microphone recording and analysis passed',flush=True)
         page.get_by_role('combobox',name='STFT window length (ms)',exact=True).select_option(label='128')
-        page.get_by_text('STFT window:',exact=True).wait_for(timeout=15000)
+        page.get_by_text('128.0 ms ·',exact=False).wait_for(timeout=15000)
         # Verify WAV upload and a subsequent download through the actual UI.
         from fourier_audio.model import example,write_wav
         y,fs=example('Pure tone')

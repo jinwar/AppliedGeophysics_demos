@@ -51,3 +51,11 @@ def test_wav_limits_duration():
     y,fs=example('Pure tone',duration=11)
     restored,rate,truncated=read_wav(write_wav(y,fs))
     assert truncated and len(restored)==10*fs
+
+
+def test_full_rate_recording_long_window():
+    y,fs=example('Pure tone',fs=48000,duration=10)
+    d=analyze(y,fs,256,.75)
+    assert d['db'].shape[1]==len(d['time'])
+    assert d['n']==12288
+    assert d['dominant']==pytest.approx(440)
