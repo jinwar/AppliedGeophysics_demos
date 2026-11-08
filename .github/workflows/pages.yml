@@ -12,7 +12,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -22,12 +22,15 @@ jobs:
       - run: pip install -r requirements.txt pytest
       - run: python -m pytest -q
       - run: python scripts/build_pages.py
+      - run: pip install playwright==1.51.0
+      - run: python -m playwright install --with-deps chromium
+      - run: PYTHONPATH=. python scripts/test_browser.py
       - uses: actions/upload-pages-artifact@v3
         with:
           path: docs
   deploy:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
