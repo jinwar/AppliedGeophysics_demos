@@ -60,3 +60,27 @@ Generated `docs/` files are workflow artifacts, not hand-maintained source.
 The optional Render configuration remains available for server deployments.
 
 The build bundles matching Panel and Bokeh wheels in the app resource archive. It validates both wheels and fails early if downloads are unavailable, so a successful deployment cannot rely on a missing Bokeh CDN wheel. Browser startup preserves installation errors instead of continuing with an incomplete environment.
+
+## Fourier transform · audio laboratory
+
+The second app (`fourier_audio/`, browser entry point `fourier_browser.py`) lets
+students record up to 10 seconds, upload uncompressed PCM WAV files, or load
+synthetic sounds. It provides playback, WAV download, a waveform, a whole-record
+FFT, and a short-time Fourier spectrogram. Hann/rectangular windows, window
+length, overlap, frequency limits, and color range are adjustable. Examples
+include a pure tone, simultaneous tones, sequential tones, and a chirp.
+
+The browser asks for microphone permission only after **Record audio** is
+clicked. MediaRecorder captures audio and Web Audio decodes it to mono PCM;
+Panel/NumPy performs the transforms inside Pyodide. The microphone stops after
+10 seconds or on **Stop**. HTTPS or localhost and a browser with microphone
+support are required. No audio is uploaded by the GitHub Pages version. The
+optional Python server version receives audio in memory for analysis and
+therefore displays a different privacy notice. PCM WAV uploads support 8/16/24/32
+bit integer samples, average channels to mono, and use the first 10 seconds.
+
+Spectrogram colors are relative amplitude dB, not calibrated sound pressure.
+FFT amplitude is one-sided and corrected for the selected window's coherent
+gain. STFT uses only complete windows; overlap changes the hop, not frequency
+resolution. Tests check known frequencies, amplitudes, sequential timing,
+chirp tracking, silence, WAV conversion, and duration limits.

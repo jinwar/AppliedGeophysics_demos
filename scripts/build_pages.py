@@ -33,46 +33,44 @@ for wheel in (bokeh_wheel, panel_wheel):
 # Panel's converter automatically packs file: requirements into its ZIP.
 converter.BOKEH_CDN_WHL = bokeh_wheel.as_uri()
 converter.PANEL_CDN_WHL = panel_wheel.as_uri()
-convert_app(
-    'sampling_browser.py', dest_path=str(OUT), runtime='pyodide-worker',
-    requirements=['numpy'],
-    resources=[str(p.relative_to(ROOT)) for folder in ('sampling_aliasing', 'shared')
-               for p in (ROOT / folder).glob('*.py')],
-    prerender=True,
-)
-required = ['sampling_browser.html', 'sampling_browser.js', 'sampling_browser.resources.zip']
-for name in required:
-    if not (OUT / name).is_file():
-        raise RuntimeError(f'Missing conversion output: {name}')
-# Stop on the original installation error instead of masking it as a later
-# ModuleNotFoundError. Assert the template matches our pinned Panel version.
-worker = OUT / 'sampling_browser.js'
-js = worker.read_text()
-old = """      type: 'status',
-      msg: `Error while installing packages`
-    });
-  }"""
-new = """      type: 'error',
-      msg: `Python package installation failed: ${e}`
-    });
-    return;
-  }"""
-if old not in js:
-    raise RuntimeError('Panel worker template changed; review error handling')
-js = js.replace(old, new)
-if 'emfs:packed_wheels/bokeh-' not in js or 'emfs:packed_wheels/panel-' not in js:
-    raise RuntimeError('Browser wheels were not bundled')
-# Content-address runtime assets so browsers cannot mix a new page with a
-# cached old worker or package archive after a deployment.
-archive = OUT / 'sampling_browser.resources.zip'
-archive_name = f'sampling_browser.{hashlib.sha256(archive.read_bytes()).hexdigest()[:12]}.resources.zip'
-archive.rename(OUT / archive_name)
-js = js.replace('sampling_browser.resources.zip', archive_name)
-worker_name = f'sampling_browser.{hashlib.sha256(js.encode()).hexdigest()[:12]}.js'
-(OUT / worker_name).write_text(js)
-worker.unlink()
-html = OUT / 'sampling_browser.html'
-html.write_text(html.read_text().replace('sampling_browser.js', worker_name))
+def build_app(stem, folder):
+    convert_app(
+        f'{stem}.py', dest_path=str(OUT), runtime='pyodide-worker',
+        requirements=['numpy'],
+        resources=[str(p.relative_to(ROOT)) for folder in (folder, 'shared')
+                   for p in (ROOT / folder).glob('*.py')],
+        prerender=True,
+    )
+    required = [f'{stem}.html', f'{stem}.js', f'{stem}.resources.zip']
+    for name in required:
+        if not (OUT / name).is_file():
+            raise RuntimeError(f'Missing conversion output: {name}')
+    # Stop on the original installation error instead of masking it as a later
+    # ModuleNotFoundError. Assert the template matches our pinned Panel version.
+    worker = OUT / f'{stem}.js'
+    js = worker.read_text()
+    old = "      type: 'status',\n      msg: `Error while installing packages`\n    });\n  }"
+    new = "      type: 'error',\n      msg: `Python package installation failed: ${e}`\n    });\n    return;\n  }"
+    if old not in js:
+        raise RuntimeError('Panel worker template changed; review error handling')
+    js = js.replace(old, new)
+    if 'emfs:packed_wheels/bokeh-' not in js or 'emfs:packed_wheels/panel-' not in js:
+        raise RuntimeError('Browser wheels were not bundled')
+    # Content-address runtime assets so browsers cannot mix a new page with a
+    # cached old worker or package archive after a deployment.
+    archive = OUT / f'{stem}.resources.zip'
+    archive_name = f'{stem}.{hashlib.sha256(archive.read_bytes()).hexdigest()[:12]}.resources.zip'
+    archive.rename(OUT / archive_name)
+    js = js.replace(f'{stem}.resources.zip', archive_name)
+    worker_name = f'{stem}.{hashlib.sha256(js.encode()).hexdigest()[:12]}.js'
+    (OUT / worker_name).write_text(js)
+    worker.unlink()
+    html = OUT / f'{stem}.html'
+    html.write_text(html.read_text().replace(f'{stem}.js', worker_name))
+
+
+for stem, folder in [('sampling_browser', 'sampling_aliasing'), ('fourier_browser', 'fourier_audio')]:
+    build_app(stem, folder)
 (OUT / '.nojekyll').touch()
 (OUT / 'index.html').write_text('''<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -85,5 +83,6 @@ html.write_text(html.read_text().replace('sampling_browser.js', worker_name))
 <p>Explore sampling interval, record length, receiver spacing, and the different waves that can produce identical measurements.</p>
 <a href="sampling_browser.html">Open the laboratory →</a>
 <p><small>The first visit downloads the Python runtime. Allow a little time for the controls to become ready. Calculations run on your device.</small></p></article>
+<article><small>LABORATORY 02</small><h2>Fourier transform · sound laboratory</h2><p>Record a short sound, hear it back, and explore its waveform, frequency spectrum, and spectrogram.</p><a href="fourier_browser.html">Open the sound laboratory →</a><p><small>Microphone recording stays on your device. Example sounds and WAV uploads are also available.</small></p></article>
 <footer><small>Explore → Predict → Explain</small></footer></main></body></html>''')
 print(f'Static site built in {OUT}')
