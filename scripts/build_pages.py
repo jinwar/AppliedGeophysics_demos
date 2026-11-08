@@ -6,6 +6,7 @@ import subprocess
 import tempfile
 import urllib.request
 import zipfile
+import hashlib
 
 ROOT = Path(__file__).resolve().parents[1]
 os.chdir(ROOT)
@@ -58,9 +59,20 @@ new = """      type: 'error',
   }"""
 if old not in js:
     raise RuntimeError('Panel worker template changed; review error handling')
-worker.write_text(js.replace(old, new))
+js = js.replace(old, new)
 if 'emfs:packed_wheels/bokeh-' not in js or 'emfs:packed_wheels/panel-' not in js:
     raise RuntimeError('Browser wheels were not bundled')
+# Content-address runtime assets so browsers cannot mix a new page with a
+# cached old worker or package archive after a deployment.
+archive = OUT / 'sampling_browser.resources.zip'
+archive_name = f'sampling_browser.{hashlib.sha256(archive.read_bytes()).hexdigest()[:12]}.resources.zip'
+archive.rename(OUT / archive_name)
+js = js.replace('sampling_browser.resources.zip', archive_name)
+worker_name = f'sampling_browser.{hashlib.sha256(js.encode()).hexdigest()[:12]}.js'
+(OUT / worker_name).write_text(js)
+worker.unlink()
+html = OUT / 'sampling_browser.html'
+html.write_text(html.read_text().replace('sampling_browser.js', worker_name))
 (OUT / '.nojekyll').touch()
 (OUT / 'index.html').write_text('''<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
