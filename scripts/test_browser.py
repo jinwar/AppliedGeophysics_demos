@@ -52,11 +52,11 @@ try:
         print('Long windows, frequency limits and scroll preservation passed',flush=True)
         # Zoom the actual Bokeh range and verify that Python sends every sample.
         page.evaluate("""() => {
-            const range=Bokeh.documents[0].get_model_by_name('waveform_time_range');
+            const range=Bokeh.documents.filter(d => d.get_model_by_name('waveform_time_range')).at(-1).get_model_by_name('waveform_time_range');
             range.start=1; range.end=1.01;
         }""")
         page.wait_for_function("""() => {
-            const data=Bokeh.documents[0].get_model_by_name('waveform_samples').data;
+            const data=Bokeh.documents.filter(d => d.get_model_by_name('waveform_samples')).at(-1).get_model_by_name('waveform_samples').data;
             const t=data.time;
             return t.length>150 && t.length<170 && t[0]>=0.999
                 && Math.abs((t[1]-t[0])-1/16000)<1e-9;
