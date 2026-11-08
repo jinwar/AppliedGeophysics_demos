@@ -15,7 +15,7 @@ try:
         page.on('pageerror',lambda e:print('Browser error:',e,flush=True))
         page.goto('http://127.0.0.1:8012/fourier_browser.html',wait_until='domcontentloaded')
         # A changed analysis confirms Python initialized; the prerender is inert.
-        page.wait_for_function("!document.body.classList.contains('pn-loading')",timeout=120000)
+        page.locator('#loader').wait_for(state='hidden',timeout=120000)
         page.get_by_role('combobox',name='Example sound',exact=True).select_option(label='Two sequential tones')
         page.get_by_role('button',name='Load example',exact=True).click()
         page.get_by_text('Source: Two sequential tones',exact=False).wait_for(timeout=30000)
