@@ -79,3 +79,19 @@ def analyze(y,fs,window_ms=64,overlap=.75,window='Hann'):
                 time=(starts+n/2)/fs,db=db.T,n=n,hop=hop,
                 dominant=None if amp.max()<1e-10 else freq[np.argmax(amp)],
                 rms=float(np.sqrt(np.mean(y*y))))
+
+
+def waveform_view(y, fs, start, end, max_points=12000):
+    """Actual samples in a viewport; use ordered extrema only for the overview."""
+    left=max(0, min(len(y)-1, int(np.floor(min(start,end)*fs))-1))
+    right=max(left+1, min(len(y), int(np.ceil(max(start,end)*fs))+2))
+    if right-left<=max_points:
+        indices=np.arange(left,right)
+    else:
+        block=int(np.ceil((right-left)/(max_points//2)))
+        indices=[left]
+        for pos in range(left,right,block):
+            values=y[pos:min(pos+block,right)]
+            indices.extend(sorted({pos+int(np.argmin(values)),pos+int(np.argmax(values))}))
+        indices=np.unique([*indices,right-1])
+    return dict(time=indices/fs,amplitude=y[indices])

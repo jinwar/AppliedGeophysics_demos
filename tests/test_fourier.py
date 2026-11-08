@@ -60,3 +60,18 @@ def test_full_rate_recording_long_window(window_ms):
     assert d['db'].shape[1]==len(d['time'])
     assert d['n']==round(fs*window_ms/1000)
     assert d['dominant']==pytest.approx(440)
+
+
+def test_waveform_zoom_restores_samples_and_preserves_overview_extrema():
+    from fourier_audio.model import waveform_view
+    y,fs=example('Pure tone',fs=48000,duration=10)
+    y[123456]=1
+    overview=waveform_view(y,fs,0,10)
+    assert len(overview['time'])<=12002
+    assert np.all(np.diff(overview['time'])>0)
+    assert overview['amplitude'].max()==1
+    detail=waveform_view(y,fs,1,1.01)
+    indices=np.rint(detail['time']*fs).astype(int)
+    np.testing.assert_array_equal(np.diff(indices),1)
+    np.testing.assert_array_equal(detail['amplitude'],y[indices])
+    assert indices[0]<=48000 and indices[-1]>=48480

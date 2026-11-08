@@ -6,7 +6,7 @@ import numpy as np
 import panel as pn
 from bokeh.models import ColorBar, LinearColorMapper, ColumnDataSource, Range1d
 from bokeh.palettes import Inferno256
-from fourier_audio.model import example, analyze, read_wav, write_wav
+from fourier_audio.model import example, analyze, read_wav, write_wav, waveform_view
 from fourier_audio.recorder import Microphone
 from fourier_audio.learning import learning_section
 from shared.style import template, plot, TEAL
@@ -27,12 +27,12 @@ def create_app(browser=False):
     playback=pn.pane.HTML(height=65)
     # Keep the same models and layout mounted when analysis controls change.
     summary=pn.pane.Markdown()
-    waveform=ColumnDataSource(dict(time=[],low=[],high=[]))
-    trace=ColumnDataSource(dict(time=[],amplitude=[]))
+    trace=ColumnDataSource(dict(time=[],amplitude=[]),name='waveform_samples')
     spectrum=ColumnDataSource(dict(frequency=[],amplitude=[]))
     spectrogram=ColumnDataSource(dict(image=[],x=[],y=[],dw=[],dh=[]))
     p=plot('1 · Waveform: amplitude through time','Time (s)',height=220)
-    p.segment('time','low','time','high',source=waveform,color=TEAL,alpha=.7)
+    p.x_range=Range1d(0,3,name='waveform_time_range')
+    p.lod_factor=1  # Never skip samples while interacting with the waveform.
     p.line('time','amplitude',source=trace,color=TEAL)
     s=plot('2 · Fourier spectrum: whole recording','Frequency (Hz)','Amplitude (relative to full scale)',250)
     s.x_range=Range1d(0,5000)
@@ -44,16 +44,17 @@ def create_app(browser=False):
     h.add_layout(ColorBar(color_mapper=mapper,title='dB relative to peak'),'right')
     plots=pn.Column(summary,p,s,h)
     audio={'y':example('Pure tone')[0],'fs':16000}
+    def update_waveform():
+        trace.data=waveform_view(audio['y'],audio['fs'],p.x_range.start,p.x_range.end)
+    def waveform_range_changed(attr,old,new):
+        update_waveform()
+    p.x_range.on_change('start',waveform_range_changed)
+    p.x_range.on_change('end',waveform_range_changed)
     def update_plots(*events):
         y,fs=audio['y'],audio['fs']
         d=analyze(y,fs,length.value,overlap.value,window.value)
         top=min(limit.value or fs/2,fs/2)
-        # Min/max envelope preserves short transients while limiting plot data.
-        block=max(1,int(np.ceil(len(y)/4000)))
-        starts=np.arange(0,len(y),block)
-        lows=np.minimum.reduceat(y,starts); highs=np.maximum.reduceat(y,starts)
-        waveform.data=dict(time=starts/fs,low=lows,high=highs)
-        trace.data=dict(time=starts/fs if block==1 else [],amplitude=y if block==1 else [])
+        update_waveform()
         keep=d['frequency']<=top
         spectrum.data=dict(frequency=d['frequency'][keep],amplitude=d['amplitude'][keep])
         s.x_range.start=0;s.x_range.end=top
@@ -69,6 +70,10 @@ def create_app(browser=False):
         summary.object=(f"**Duration:** {len(y)/fs:.2f} s · **Sample rate:** {fs:g} Hz · **Nyquist:** {fs/2:g} Hz\n\n**Largest spectral peak:** {dominant} · **Whole-record FFT spacing:** {fs/len(y):.2f} Hz\n\n**STFT window:** {d['n']/fs*1000:.1f} ms · **STFT bin spacing:** {df:.1f} Hz · **Hop:** {step*1000:.1f} ms"+warnings)
     def set_audio(y,fs,label):
         audio.update(y=np.asarray(y,dtype=float)[:int(fs*10)],fs=int(fs))
+        p.x_range.start=0
+        p.x_range.end=len(audio['y'])/audio['fs']
+        p.x_range.reset_start=0
+        p.x_range.reset_end=p.x_range.end
         note.object='**Source:** '+label
         uri=base64.b64encode(write_wav(audio['y'],audio['fs'])).decode()
         playback.object=f'<audio controls preload="metadata" style="width:100%" src="data:audio/wav;base64,{uri}"></audio>'
@@ -105,7 +110,7 @@ def create_app(browser=False):
 3. Load **Chirp**, then change the STFT window from 16 to 2048 ms. Compare frequency sharpness with time smearing.
 4. Record a sustained vowel or hum. Identify a fundamental and its harmonics. The largest peak need not be the fundamental.
 5. Record a clap. Why does a short event occupy many frequencies?''')),
-        ('How to read the analysis',pn.pane.Markdown('''The waveform shows normalized digital amplitude, not calibrated sound pressure. The FFT and STFT remove the recording's mean (DC). One-sided amplitudes are corrected for the window's coherent gain; DC and Nyquist are not doubled. The spectrogram uses **20 log₁₀(amplitude / peak STFT amplitude)**, so 0 dB is the strongest time-frequency bin in this sound, not 0 dB SPL.
+        ('How to read the analysis',pn.pane.Markdown('''The waveform shows normalized digital amplitude, not calibrated sound pressure. Zoom into a few milliseconds to see individual oscillations. The overview retains local extrema at their actual sample times; zooming reveals all samples in the visible interval. This display reduction does not affect the FFT or STFT. The FFT and STFT remove the recording's mean (DC). One-sided amplitudes are corrected for the window's coherent gain; DC and Nyquist are not doubled. The spectrogram uses **20 log₁₀(amplitude / peak STFT amplitude)**, so 0 dB is the strongest time-frequency bin in this sound, not 0 dB SPL.
 
 STFT windows are centered on the displayed time coordinates; only complete windows are used. Windows longer than the recording are shortened to its duration. Longer windows give finer frequency spacing but smear changes in time. Greater overlap gives more closely spaced snapshots; it does not improve the underlying frequency resolution. A Hann window reduces leakage at the expense of a wider spectral peak. The displayed bin spacing is not the same as the minimum resolvable frequency separation.
 
