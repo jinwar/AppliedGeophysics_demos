@@ -37,63 +37,39 @@ def learning_section():
 <text x="195" y="523">Fourier spectrum</text><text x="195" y="546">amplitude vs frequency</text>
 <text x="565" y="523">Spectrogram · dB relative to peak</text><text x="565" y="546">frequency vs time, color = level</text>
 </g></svg>'''
-    return pn.Column(
-        pn.pane.Markdown('## From sound to frequency and time\nThe waveform preserves timing; the whole-record FFT summarizes frequencies; the STFT shows when those frequencies occur.'),
-        pn.pane.HTML(diagram),
-        pn.pane.Markdown("""## Key Python functions and usage
-
-| Function | Role in this app |
-| --- | --- |
-| `np.asarray(y, dtype=float)` and `y.mean()` | Convert samples to a numeric array and remove the mean before spectral analysis. |
-| `np.hanning(n)` / `np.ones(n)` | Make a Hann / rectangular window. Multiply samples by it before the FFT. |
-| `np.fft.rfft(y)` | Return complex Fourier coefficients for nonnegative frequencies of a real signal. |
-| `np.fft.rfftfreq(n, d=1/fs)` | Label FFT bins in Hz; spacing is `fs/n`. |
-| `np.abs(X)` | Convert complex coefficients to magnitudes. Divide by the window sum and double interior bins for a one-sided amplitude spectrum. |
-| `np.arange(...)` and `np.stack(...)` | Choose frame starts and assemble overlapping segments for the STFT. |
-| `np.fft.rfft(frames * taper, axis=1)` | Transform each windowed frame along its sample axis. |
-| `20 * np.log10(...)` | Express amplitude ratios in decibels. The spectrogram reference is its strongest time-frequency bin. |
-| `read_wav(data)` / `write_wav(y, fs)` | App helpers to decode PCM WAV bytes to mono samples / encode samples as a downloadable WAV. |
-| `analyze(y, fs, ...)` | App helper returning the whole-record spectrum, STFT, frequency/time axes, and summary values. |
-
-### Example 1 · Build a one-sided amplitude spectrum
-
-Run this standalone NumPy example in Python or a notebook. A 440 Hz tone with amplitude 0.6 produces a peak near 440 Hz with amplitude 0.6.
+    return pn.Accordion(
+        ('How the data are processed', pn.Column(
+            pn.pane.Markdown('The waveform shows timing, the FFT shows frequencies, and the spectrogram shows how frequencies change with time.'),
+            pn.pane.HTML(diagram))),
+        ('Python example · waveform, spectrum and spectrogram', pn.pane.Markdown("""Run in a notebook with **NumPy and Matplotlib**. This sound switches from 440 Hz to 880 Hz halfway through.
 
 ```python
 import numpy as np
+import matplotlib.pyplot as plt
 
-fs = 16000                         # samples per second
-t = np.arange(3 * fs) / fs          # three seconds
-y = 0.6 * np.sin(2 * np.pi * 440 * t)
-y = y - y.mean()
-w = np.hanning(len(y))
-X = np.fft.rfft(y * w)
-amplitude = np.abs(X) / w.sum()
-amplitude[1:] *= 2                 # positive-frequency contribution
-if len(y) % 2 == 0:
-    amplitude[-1] /= 2             # do not double Nyquist
-frequency = np.fft.rfftfreq(len(y), d=1/fs)
-print(frequency[np.argmax(amplitude)])  # 440.0 Hz
+fs = 16000                           # samples per second
+t = np.arange(3 * fs) / fs
+y = np.sin(2 * np.pi * np.where(t < 1.5, 440, 880) * t)
+
+# Whole-record Fourier amplitude spectrum
+f = np.fft.rfftfreq(len(y), d=1/fs)
+a = np.abs(np.fft.rfft(y)) / len(y)
+a[1:-1] *= 2                         # even-length signal: leave DC/Nyquist alone
+
+fig, ax = plt.subplots(3, 1, figsize=(9, 8))
+ax[0].plot(t, y)
+ax[0].set(xlabel="Time (s)", ylabel="Amplitude")
+ax[1].plot(f, a)
+ax[1].set(xlim=(0, 2000), xlabel="Frequency (Hz)", ylabel="Amplitude")
+ax[2].specgram(y, Fs=fs, NFFT=1024, noverlap=768, cmap="inferno")
+ax[2].set(ylim=(0, 2000), xlabel="Time (s)", ylabel="Frequency (Hz)")
+plt.tight_layout()
+plt.show()
 ```
 
+**Essentials:** `plot` draws a curve; `rfft` computes the Fourier coefficients; `rfftfreq` labels the frequencies; `specgram` makes a spectrogram from overlapping windows.
 
-### Example 2 · Reproduce the app's time-frequency analysis
+`NFFT=1024` means a 64 ms window at 16 kHz; `noverlap=768` means 75% overlap. Increase the window length to improve frequency detail at the expense of time detail. Zoom into the waveform to see individual cycles.
 
-Run from the cloned repository root (NumPy installed). The two tones occur sequentially; the spectrum contains both, while the spectrogram separates them in time.
-
-```python
-from fourier_audio.model import example, analyze, read_wav, write_wav
-from pathlib import Path
-
-y, fs = example("Two sequential tones")
-d = analyze(y, fs, window_ms=512, overlap=0.75, window="Hann")
-print(d["n"], d["hop"])              # 8192 samples, 2048 samples
-print(d["db"].shape)                 # (frequency bins, time frames)
-# Plot d["amplitude"] against d["frequency"].
-# Plot d["db"] with d["time"] and d["stft_frequency"] as axes.
-Path("example.wav").write_bytes(write_wav(y, fs))
-y_loaded, fs_loaded, truncated = read_wav(Path("example.wav").read_bytes())
-```
-
-**Connect code to the controls:** `window_ms` sets frame duration, `overlap` sets the shared fraction between frames, and `window` selects the taper. The frequency upper limit only crops the displayed frequency range; it does not filter the audio. Longer windows reduce FFT bin spacing but blur timing. Browser microphone capture uses JavaScript; NumPy performs the analysis in Python.
-"""))
+This simple example uses a rectangular window for the whole-record FFT. Matplotlib's `specgram` defaults to a Hann window and displays power spectral density in dB; the app displays amplitude in dB relative to its strongest STFT bin, so the color values differ. To analyze your own sound, replace `y` and `fs` with your samples and sample rate.
+""")), active=[])
