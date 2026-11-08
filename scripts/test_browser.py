@@ -33,6 +33,27 @@ try:
         y,fs=example('Pure tone')
         page.locator('input[type=file]').set_input_files({'name':'tone.wav','mimeType':'audio/wav','buffer':write_wav(y,fs)})
         page.get_by_text('Source: Uploaded WAV',exact=False).wait_for(timeout=30000)
+        # Keep the analysis scroll container fixed while changing sidebar controls.
+        page.evaluate("""() => {
+            window.analysisScroller = [...document.querySelectorAll('*')].find(
+                el => el.id !== 'sidebar' && el.scrollHeight > el.clientHeight + 300
+                && ['auto','scroll'].includes(getComputedStyle(el).overflowY)
+                && el.contains(document.querySelector('audio'))
+            ) || document.scrollingElement;
+            window.analysisScroller.scrollTop = 300;
+        }""")
+        before=page.evaluate('window.analysisScroller.scrollTop')
+        assert before>100, 'Analysis must be scrolled for the regression check'
+        for label in ['512','1024','2048']:
+            page.get_by_role('combobox',name='STFT window length (ms)',exact=True).select_option(label=label)
+            page.get_by_text(label+'.0 ms ·',exact=False).wait_for(timeout=15000)
+            page.wait_for_timeout(300)
+            assert abs(page.evaluate('window.analysisScroller.scrollTop')-before)<2
+        for label in ['500 Hz','1 kHz']:
+            page.get_by_role('combobox',name='Frequency axis upper limit',exact=True).select_option(label=label)
+            page.wait_for_timeout(1000)
+            assert abs(page.evaluate('window.analysisScroller.scrollTop')-before)<2
+        print('Long windows, frequency limits and scroll preservation passed',flush=True)
         with page.expect_download() as event:
             page.get_by_role('button',name='Download this sound (WAV)',exact=True).click()
         assert event.value.suggested_filename=='fourier_audio.wav'

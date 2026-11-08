@@ -53,9 +53,10 @@ def test_wav_limits_duration():
     assert truncated and len(restored)==10*fs
 
 
-def test_full_rate_recording_long_window():
+@pytest.mark.parametrize('window_ms',[256,512,1024,2048])
+def test_full_rate_recording_long_window(window_ms):
     y,fs=example('Pure tone',fs=48000,duration=10)
-    d=analyze(y,fs,256,.75)
+    d=analyze(y,fs,window_ms,.75)
     assert d['db'].shape[1]==len(d['time'])
-    assert d['n']==12288
+    assert d['n']==round(fs*window_ms/1000)
     assert d['dominant']==pytest.approx(440)
