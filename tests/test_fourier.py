@@ -86,3 +86,16 @@ def test_instrument_sequence_pitch_order_and_silences():
         assert d['dominant']==pytest.approx(expected,abs=3)
         assert np.all(y[round((slot+.86)*fs):(slot+1)*fs]==0)
     assert not np.allclose(y[:fs],y[fs:2*fs])
+
+
+def test_window_shape_affects_both_spectra_but_length_only_stft():
+    fs=16000
+    t=np.arange(fs)/fs
+    y=np.sin(2*np.pi*440.5*t)
+    hann=analyze(y,fs,64,window='Hann')
+    rectangular=analyze(y,fs,64,window='Rectangular')
+    longer=analyze(y,fs,128,window='Hann')
+    assert not np.allclose(hann['amplitude'],rectangular['amplitude'])
+    assert not np.allclose(hann['db'],rectangular['db'])
+    np.testing.assert_array_equal(hann['amplitude'],longer['amplitude'])
+    assert hann['n']*2==longer['n']
