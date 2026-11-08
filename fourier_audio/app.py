@@ -8,6 +8,7 @@ from bokeh.models import ColorBar, LinearColorMapper, ColumnDataSource, Range1d
 from bokeh.palettes import Inferno256
 from fourier_audio.model import example, analyze, read_wav, write_wav
 from fourier_audio.recorder import Microphone
+from fourier_audio.learning import learning_section
 from shared.style import template, plot, TEAL
 
 pn.extension(sizing_mode='stretch_width')
@@ -108,6 +109,7 @@ def create_app(browser=False):
 
 STFT windows are centered on the displayed time coordinates; only complete windows are used. Windows longer than the recording are shortened to its duration. Longer windows give finer frequency spacing but smear changes in time. Greater overlap gives more closely spaced snapshots; it does not improve the underlying frequency resolution. A Hann window reduces leakage at the expense of a wider spectral peak. The displayed bin spacing is not the same as the minimum resolvable frequency separation.
 
-Stereo uploads are averaged to mono. Browser/device microphone processing may affect amplitudes. Examples are synthetic; recordings are limited to 10 seconds.''')))],
+Stereo uploads are averaged to mono. Browser/device microphone processing may affect amplitudes. Examples are synthetic; recordings are limited to 10 seconds.'''))),
+        learning_section()],
         [pn.pane.Markdown('### Sound source'),source,load,pn.pane.Markdown('**Or upload uncompressed PCM WAV** (first 10 s; max 20 MB)'),upload,
          pn.pane.Markdown('### Analysis controls'),window,length,overlap,limit,contrast])

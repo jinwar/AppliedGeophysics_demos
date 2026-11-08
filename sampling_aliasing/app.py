@@ -1,3 +1,4 @@
+from sampling_aliasing.learning import learning_section
 """Panel UI. Run through server.py to get both the home page and this app."""
 import io
 import json
@@ -94,6 +95,7 @@ Challenge mode hides model curves and alias values until you choose **Reveal**. 
     return template('Sampling & aliasing',[
         pn.pane.Markdown('## When different waves produce the same measurements\nExplore how recording interval, duration, and receiver spacing limit what seismic data can tell us.'),
         pn.Tabs(('Time sampling',pn.Column(temporal_panel)),('Receiver spacing',spatial_panel),('Challenges',challenges),dynamic=True),
-        pn.Row(pn.widgets.FileDownload(label='Download temporal samples (CSV)',filename='samples.csv',callback=data_download),pn.widgets.FileDownload(label='Download parameters (JSON)',filename='parameters.json',callback=parameters_download))
+        pn.Row(pn.widgets.FileDownload(label='Download temporal samples (CSV)',filename='samples.csv',callback=data_download),pn.widgets.FileDownload(label='Download parameters (JSON)',filename='parameters.json',callback=parameters_download)),
+        learning_section()
     ],[mode,preset,reveal,pn.pane.Markdown('### Time sampling controls'),f1,f2,a2,dt,duration,phase,noise,seed,aa,
        pn.pane.Markdown('The ideal low-pass removes components at or above 0.45 fs before sampling. Noise is added afterward. All data are synthetic; amplitudes are normalized.')])
