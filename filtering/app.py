@@ -155,8 +155,8 @@ def create_app():
     def parameter_download():
         return io.StringIO(json.dumps(state['result']['parameters'], indent=2))
 
-    csv = pn.widgets.FileDownload(name='Download data (CSV)', filename='filtering_data.csv', callback=csv_download)
-    params = pn.widgets.FileDownload(name='Download parameters', filename='filtering_parameters.json', callback=parameter_download)
+    csv = pn.widgets.FileDownload(label='Download data (CSV)', filename='filtering_data.csv', callback=csv_download)
+    params = pn.widgets.FileDownload(label='Download parameters', filename='filtering_parameters.json', callback=parameter_download)
     for control in w.values():
         control.param.watch(update, 'value')
     mode.param.watch(change_mode, 'value')

@@ -75,7 +75,9 @@ def test_ui_challenge_presets_and_downloads():
     by_name = {w.name: w for w in widgets}
     mode = by_name['Mode']
     mode.value = 'Challenge'
-    download = by_name['Download data (CSV)']
+    download = next(w for w in widgets if isinstance(w, pn.widgets.FileDownload)
+                    and w.filename == 'filtering_data.csv')
+    assert download.label == 'Download data (CSV)'
     assert 'clean' not in download.callback().getvalue().splitlines()[0]
     by_name['Reveal clean signal'].clicks += 1
     assert 'clean' in download.callback().getvalue().splitlines()[0]
