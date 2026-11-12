@@ -17,6 +17,7 @@ try:
         # A changed analysis confirms Python initialized; the prerender is inert.
         page.locator('#loader').wait_for(state='hidden',timeout=120000)
         page.get_by_role('combobox',name='Example sound',exact=True).select_option(label='Two sequential tones')
+        page.wait_for_function('!pyodideWorker.busy && pyodideWorker.queue.length === 0')
         page.get_by_role('button',name='Load example',exact=True).click()
         page.get_by_text('Source: Two sequential tones',exact=False).wait_for(timeout=30000)
         print('Example callback passed',flush=True)
@@ -67,32 +68,51 @@ try:
         assert event.value.suggested_filename=='fourier_audio.wav'
         print('WAV upload and download passed',flush=True)
         page.get_by_role('combobox',name='Example sound',exact=True).select_option(label='Do–Re–Mi: piano and violin')
+        page.wait_for_function('!pyodideWorker.busy && pyodideWorker.queue.length === 0')
         page.get_by_role('button',name='Load example',exact=True).click()
         page.get_by_text('Source: Do–Re–Mi: piano and violin',exact=False).wait_for(timeout=30000)
         page.get_by_text('6.00 s ·',exact=False).wait_for(timeout=15000)
         print('Piano and violin sequence loaded and analyzed',flush=True)
         page.goto('http://127.0.0.1:8012/filtering_browser.html',wait_until='domcontentloaded')
         page.locator('#loader').wait_for(state='hidden',timeout=120000)
+        page.wait_for_function('''() => {
+            const doc = Bokeh.documents.find(d => d.get_model_by_name('filtering_spectrum'));
+            return doc && doc.get_model_by_name('filtering_spectrum').y_scale.type === 'LogScale';
+        }''')
+        page.get_by_text('Filter off ·',exact=False).wait_for(timeout=30000)
+        page.get_by_text('Choose a filter and enable Apply filter. Toggle Reveal true signal to compare with the target.',exact=True).wait_for(timeout=30000)
         page.get_by_role('combobox',name='Experiment',exact=True).select_option(label='Narrowband interference')
         # The select's DOM value changes before the Python worker processes it.
         # Wait for that round trip before clicking a button that reads the value.
         page.wait_for_function('!pyodideWorker.busy && pyodideWorker.queue.length === 0')
         page.get_by_role('button',name='Load experiment',exact=True).click()
         page.get_by_text('Notch / band-stop · Butterworth',exact=False).wait_for(timeout=30000)
-        page.get_by_text('Challenge',exact=True).click()
-        page.get_by_role('button',name='Reveal clean signal',exact=True).click()
+        page.get_by_text('Filter off ·',exact=False).wait_for(timeout=30000)
+        page.get_by_role('button',name='Apply filter',exact=True).click()
+        page.get_by_role('button',name='Reveal true signal',exact=True).click()
         page.get_by_text('Recovery RMSE:',exact=False).wait_for(timeout=30000)
         page.get_by_text('Noise & interference',exact=True).click()
         page.get_by_role('button',name='New noise realization',exact=True).click()
-        page.get_by_role('button',name='Reveal clean signal',exact=True).wait_for(timeout=30000)
+        page.get_by_role('button',name='Reveal true signal',exact=True).click()
+        page.wait_for_function('!pyodideWorker.busy && pyodideWorker.queue.length === 0')
         with page.expect_download() as event:
             page.get_by_role('button',name='Download data (CSV)',exact=True).click()
         assert event.value.suggested_filename=='filtering_data.csv'
         data=Path(event.value.path()).read_text()
-        assert 'clean' not in data.splitlines()[0], 'Challenge CSV must not reveal target'
+        assert 'clean' not in data.splitlines()[0], 'CSV must omit the hidden target'
         page.get_by_role('combobox',name='Filter design',exact=True).select_option(label='Ideal sharp cutoff')
         page.get_by_text('Noncausal zero-phase',exact=False).wait_for(timeout=30000)
-        print('Filtering presets, challenge reveal/reset, CSV and ideal response passed',flush=True)
+        page.get_by_role('button',name='Apply filter',exact=True).click()
+        page.get_by_text('Filter off ·',exact=False).wait_for(timeout=30000)
+        page.wait_for_function('''() => {
+            const doc = Bokeh.documents.filter(d => d.get_model_by_name('filtering_traces')).at(-1);
+            const data = doc.get_model_by_name('filtering_traces').data;
+            const plot = doc.get_model_by_name('filtering_spectrum');
+            return Array.from(data.clean).every(Number.isNaN)
+                && Array.from(data.recovered).every(Number.isNaN)
+                && plot.y_range.start > 0;
+        }''')
+        print('Filtering presets, independent filter/truth toggles, CSV and ideal response passed',flush=True)
         browser.close()
 finally:
     server.shutdown()

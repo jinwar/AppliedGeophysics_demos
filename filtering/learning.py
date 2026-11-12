@@ -1,7 +1,7 @@
 NOTES = '''
 ### Predict → filter → inspect
 1. Which frequencies belong to the target? Which belong to contamination?
-2. Choose a filter before revealing the clean signal.
+2. Choose a filter and enable **Apply filter**. Use **Reveal true signal** to show or hide the target.
 3. Inspect the removed trace. Did the filter discard an arrival or a sinusoid?
 4. Compare recovery error as well as visual smoothness.
 
@@ -29,8 +29,8 @@ crops the inverse FFT to the original record. It is noncausal and zero phase;
 sharp frequency edges produce ringing. Padding reduces periodic wraparound but
 does not remove finite-record boundary effects. Inspect record edges for every filter.
 
-Spectra use a rectangular window and one-sided amplitude scaling, without
-independent normalization. Sampling is 500 Hz for 2 seconds (Nyquist 250 Hz).
+Spectra use a rectangular window and one-sided amplitude scaling on a logarithmic
+amplitude axis, without independent normalization. Zero-amplitude bins are omitted. Sampling is 500 Hz for 2 seconds (Nyquist 250 Hz).
 The filter response describes interior behavior; finite-record edges can differ.
 
 RMSE and output SNR use **recovered − clean**, so both residual noise and signal

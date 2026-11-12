@@ -99,9 +99,12 @@ zero-padded record and crops the result; boundary effects remain.
 Linked time views show measured, recovered, clean, and removed components.
 Spectra retain physical relative amplitudes. Full-record recovery RMSE/SNR
 include distortion and edges; first-event peak errors use a local matching window.
-Challenge mode hides truth and metrics until reveal, resets on parameter edits,
-and excludes clean data from CSV downloads until revealed. This is a teaching
-exercise, not secure assessment: the synthetic model is available to the browser.
+Apply filter and Reveal true signal are independent controls, both off on startup.
+With filtering off, only the measurement is shown; recovery traces and diagnostics
+appear when filtering is enabled. True-signal traces and error metrics are shown
+only when revealed. CSV downloads follow these controls. Frequency spectra use a
+logarithmic amplitude axis; zero-amplitude bins are omitted. Parameter downloads
+include both toggle states.
 
 Four presets, expandable interpretation notes, a processing diagram, essential
 Python snippets, and CSV/JSON downloads are included. SciPy is loaded only for

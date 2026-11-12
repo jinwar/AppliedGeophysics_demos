@@ -66,26 +66,49 @@ def test_single_cutoff_filters_ignore_other_cutoff():
         assert np.isfinite(r['recovered']).all()
 
 
-def test_ui_challenge_presets_and_downloads():
+def test_ui_filter_and_truth_toggles_presets_and_downloads():
     import panel as pn
     from filtering.app import create_app
     app = create_app()
     widgets = [w for item in list(app.sidebar) + list(app.main)
                for w in pn.panel(item).select(pn.widgets.Widget)]
     by_name = {w.name: w for w in widgets}
-    mode = by_name['Mode']
-    mode.value = 'Challenge'
+    assert 'Mode' not in by_name
+    apply = by_name['Apply filter']
+    reveal = by_name['Reveal true signal']
+    assert not apply.value and not reveal.value
     download = next(w for w in widgets if isinstance(w, pn.widgets.FileDownload)
                     and w.filename == 'filtering_data.csv')
     assert download.label == 'Download data (CSV)'
     assert 'clean' not in download.callback().getvalue().splitlines()[0]
-    by_name['Reveal clean signal'].clicks += 1
+    assert download.callback().getvalue().splitlines()[0] == 't,observed'
+    reveal.value = True
     assert 'clean' in download.callback().getvalue().splitlines()[0]
-    by_name['Upper cutoff (Hz)'].value = 70
+    assert download.callback().getvalue().splitlines()[0] == 't,clean,observed'
+    apply.value = True
+    assert download.callback().getvalue().splitlines()[0] == 't,clean,observed,recovered,removed'
+    reveal.value = False
     assert 'clean' not in download.callback().getvalue().splitlines()[0]
+    from bokeh.models import LogScale
+    plots = [pane.object for item in app.main for pane in pn.panel(item).select(pn.pane.Bokeh)]
+    spectrum_plot = next(fig for fig in plots if fig.name == 'filtering_spectrum')
+    assert isinstance(spectrum_plot.y_scale, LogScale)
+    data = spectrum_plot.renderers[0].data_source.data
+    assert np.all(data['observed'][np.isfinite(data['observed'])] > 0)
     for name in PRESETS:
         by_name['Experiment'].value = name
         by_name['Load experiment'].clicks += 1
         assert not download.disabled
     by_name['Lower cutoff (Hz)'].value = 150
     assert download.disabled
+
+    apply.value = False
+    assert not download.disabled  # Invalid filter settings cannot block bypass.
+    assert download.callback().getvalue().splitlines()[0] == 't,observed'
+
+
+def test_filter_bypass_ignores_invalid_cutoffs():
+    result = experiment(Parameters(low=100, high=20), filtering=False)
+    np.testing.assert_array_equal(result['recovered'], result['observed'])
+    assert not result['removed'].any()
+    assert result['frequency'].size == 0

@@ -89,9 +89,13 @@ def snr(clean, estimate):
     return float(10 * np.log10(np.sum(clean**2) / error)) if error else float('inf')
 
 
-def experiment(p):
+def experiment(p, filtering=True):
     t, clean, observed = synthesize(p)
-    recovered, f, gain, phase = apply_filter(observed, p)
+    if filtering:
+        recovered, f, gain, phase = apply_filter(observed, p)
+    else:
+        recovered = observed.copy()
+        f = gain = phase = np.array([], dtype=float)
     metrics = dict(input_snr=snr(clean, observed), output_snr=snr(clean, recovered),
                    rmse=float(np.sqrt(np.mean((recovered-clean)**2))))
     if p.kind != 'Sinusoids':
