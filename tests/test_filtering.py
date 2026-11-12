@@ -77,6 +77,14 @@ def test_ui_filter_and_truth_toggles_presets_and_downloads():
     apply = by_name['Apply filter']
     reveal = by_name['Reveal true signal']
     assert not apply.value and not reveal.value
+    plots = [pane.object for item in app.main for pane in pn.panel(item).select(pn.pane.Bokeh)]
+    snr_label = next(label for fig in plots for label in fig.above if label.name == 'filtering_snr')
+    assert 'Before filter:' in snr_label.text
+    assert 'After filter:' not in snr_label.text
+    apply.value = True
+    assert 'After filter:' in snr_label.text  # Independent of revealing the truth.
+    apply.value = False
+    assert 'After filter:' not in snr_label.text
     download = next(w for w in widgets if isinstance(w, pn.widgets.FileDownload)
                     and w.filename == 'filtering_data.csv')
     assert download.label == 'Download data (CSV)'

@@ -33,6 +33,8 @@ Spectra use a rectangular window and one-sided amplitude scaling on a logarithmi
 amplitude axis, without independent normalization. Zero-amplitude bins are omitted. Sampling is 500 Hz for 2 seconds (Nyquist 250 Hz).
 The filter response describes interior behavior; finite-record edges can differ.
 
+Figure 1 shows estimated SNR before filtering and, when enabled, after filtering,
+using the synthetic true signal as the reference even when its curve is hidden.
 RMSE and output SNR use **recovered − clean**, so both residual noise and signal
 distortion count as error. Metrics include the entire record, including its edges.
 Timing and amplitude errors track the first event's positive peak in a local window;

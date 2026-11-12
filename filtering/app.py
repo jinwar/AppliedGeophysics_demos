@@ -4,7 +4,7 @@ import json
 from dataclasses import asdict
 import numpy as np
 import panel as pn
-from bokeh.models import ColumnDataSource, Range1d, LogScale, LogTicker, LogTickFormatter
+from bokeh.models import ColumnDataSource, Range1d, LogScale, LogTicker, LogTickFormatter, Title
 from shared.style import plot, template, NAVY, TEAL, ORANGE
 from .model import Parameters, PRESETS, experiment, spectrum
 from .learning import NOTES, CODE, FLOW
@@ -54,6 +54,8 @@ def create_app():
     response = ColumnDataSource(data=dict(f=[], gain=[], phase=[]))
     time_range = Range1d(0, 2, name='filtering_time_range')
     ptime = plot('01 · Recover the signal', 'Time (s)', height=330)
+    snr_label = Title(name='filtering_snr', text_font_size='11pt', text_font_style='normal')
+    ptime.add_layout(snr_label, 'above')
     ptime.x_range = time_range
     ptime.line('t', 'observed', source=trace, color='#94a3b8', alpha=.8, legend_label='Measured')
     clean_line = ptime.line('t', 'clean', source=trace, color=NAVY, line_width=2, legend_label='Clean target')
@@ -126,13 +128,15 @@ def create_app():
             recovered=log_amplitude(spectrum(result['recovered'], p.fs)[1]) if apply.value else np.full_like(f, np.nan))
         response.data = dict(f=result['frequency'], gain=result['gain'], phase=result['phase'])
         m = result['metrics']
+        snr_label.text = f"Estimated SNR · Before filter: {m['input_snr']:.1f} dB"
+        if apply.value:
+            snr_label.text += f" · After filter: {m['output_snr']:.1f} dB"
         if show and apply.value:
-            metrics.object = (f"**Input SNR:** {m['input_snr']:.1f} dB　 **Output SNR:** {m['output_snr']:.1f} dB　 "
-                              f"**Recovery RMSE:** {m['rmse']:.3f}")
+            metrics.object = f"**Recovery RMSE:** {m['rmse']:.3f}"
             if 'timing_ms' in m:
                 metrics.object += f"\n\n**First peak timing error:** {m['timing_ms']:+.1f} ms　 **Peak amplitude error:** {m['amplitude_pct']:+.1f}%"
         elif show:
-            metrics.object = f"**Input SNR:** {m['input_snr']:.1f} dB · Enable Apply filter to compare recovery."
+            metrics.object = 'Enable **Apply filter** to compare recovery.'
         else:
             metrics.object = 'Choose a filter and enable **Apply filter**. Toggle **Reveal true signal** to compare with the target.'
         phase_label = 'Noncausal zero-phase' if p.design == 'Ideal sharp cutoff' else p.phase

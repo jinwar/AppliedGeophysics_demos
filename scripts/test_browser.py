@@ -77,7 +77,9 @@ try:
         page.locator('#loader').wait_for(state='hidden',timeout=120000)
         page.wait_for_function('''() => {
             const doc = Bokeh.documents.find(d => d.get_model_by_name('filtering_spectrum'));
-            return doc && doc.get_model_by_name('filtering_spectrum').y_scale.type === 'LogScale';
+            return doc && doc.get_model_by_name('filtering_spectrum').y_scale.type === 'LogScale'
+                && doc.get_model_by_name('filtering_snr').text.includes('Before filter:')
+                && !doc.get_model_by_name('filtering_snr').text.includes('After filter:');
         }''')
         page.get_by_text('Filter off ·',exact=False).wait_for(timeout=30000)
         page.get_by_text('Choose a filter and enable Apply filter. Toggle Reveal true signal to compare with the target.',exact=True).wait_for(timeout=30000)
@@ -89,6 +91,7 @@ try:
         page.get_by_text('Notch / band-stop · Butterworth',exact=False).wait_for(timeout=30000)
         page.get_by_text('Filter off ·',exact=False).wait_for(timeout=30000)
         page.get_by_role('button',name='Apply filter',exact=True).click()
+        page.wait_for_function("Bokeh.documents.filter(d => d.get_model_by_name('filtering_snr')).at(-1).get_model_by_name('filtering_snr').text.includes('After filter:')")
         page.get_by_role('button',name='Reveal true signal',exact=True).click()
         page.get_by_text('Recovery RMSE:',exact=False).wait_for(timeout=30000)
         page.get_by_text('Noise & interference',exact=True).click()
@@ -110,7 +113,8 @@ try:
             const plot = doc.get_model_by_name('filtering_spectrum');
             return Array.from(data.clean).every(Number.isNaN)
                 && Array.from(data.recovered).every(Number.isNaN)
-                && plot.y_range.start > 0;
+                && plot.y_range.start > 0
+                && !doc.get_model_by_name('filtering_snr').text.includes('After filter:');
         }''')
         print('Filtering presets, independent filter/truth toggles, CSV and ideal response passed',flush=True)
         page.goto('http://127.0.0.1:8012/sampling_browser.html',wait_until='domcontentloaded')

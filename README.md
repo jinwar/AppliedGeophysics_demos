@@ -101,8 +101,9 @@ Spectra retain physical relative amplitudes. Full-record recovery RMSE/SNR
 include distortion and edges; first-event peak errors use a local matching window.
 Apply filter and Reveal true signal are independent controls, both off on startup.
 With filtering off, only the measurement is shown; recovery traces and diagnostics
-appear when filtering is enabled. True-signal traces and error metrics are shown
-only when revealed. CSV downloads follow these controls. Frequency spectra use a
+appear when filtering is enabled. Figure 1 always shows estimated input SNR and adds output SNR when filtering is
+enabled, using the synthetic truth as reference. True-signal traces and the other
+error metrics are shown only when revealed. CSV downloads follow these controls. Frequency spectra use a
 logarithmic amplitude axis; zero-amplitude bins are omitted. Parameter downloads
 include both toggle states.
 
