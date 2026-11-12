@@ -113,6 +113,25 @@ try:
                 && plot.y_range.start > 0;
         }''')
         print('Filtering presets, independent filter/truth toggles, CSV and ideal response passed',flush=True)
+        page.goto('http://127.0.0.1:8012/sampling_browser.html',wait_until='domcontentloaded')
+        page.locator('#loader').wait_for(state='hidden',timeout=120000)
+        assert page.get_by_role('tab').count() == 0
+        page.get_by_text('Sampling frequency (Hz): 100',exact=True).wait_for(timeout=30000)
+        # The fourth time-sampling slider is the frequency control.
+        frequency = page.get_by_role('slider').nth(3)
+        frequency.focus()
+        frequency.press('Home')
+        frequency.press('ArrowRight')
+        page.get_by_text('Sampling frequency: 21.0 Hz',exact=False).wait_for(timeout=30000)
+        with page.expect_download() as event:
+            page.get_by_role('button',name='Download temporal samples (CSV)',exact=True).click()
+        import numpy as np
+        samples = np.loadtxt(event.value.path(),delimiter=',',skiprows=1)
+        assert len(samples) == 21
+        assert abs(samples[1,0] - 1/21) < 1e-12
+        page.get_by_role('combobox',name='Experiment',exact=True).select_option(label='Well sampled')
+        page.get_by_text('Sampling frequency: 200.0 Hz',exact=False).wait_for(timeout=30000)
+        print('Sampling frequency control, CSV, presets and simplified layout passed',flush=True)
         browser.close()
 finally:
     server.shutdown()

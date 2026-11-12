@@ -34,26 +34,4 @@ plt.show()
 
 The two curves agree at the sample times. Increase `fs` above 160 samples/s to resolve this 80 Hz signal without aliasing. The dense drawing grid is not additional measured data.
 """)),
-        ('Python example · receiver spacing', pn.pane.Markdown("""The same idea applies to distance. A 30 Hz wave traveling at 600 m/s has a 20 m wavelength, so receiver spacing should be less than 10 m.
-
-```python
-import numpy as np
-import matplotlib.pyplot as plt
-
-frequency, velocity, spacing = 30, 600, 15
-k = frequency / velocity             # cycles per metre
-ks = 1 / spacing                     # spatial sampling rate
-ka = (k + ks/2) % ks - ks/2           # signed aliased wavenumber
-x = np.arange(24) * spacing
-xx = np.linspace(0, x[-1], 4000)
-plt.plot(xx, np.cos(2*np.pi*k*xx), label="True wave")
-plt.plot(xx, np.cos(2*np.pi*ka*xx), "--", label="Spatial alias")
-plt.scatter(x, np.cos(2*np.pi*k*x), color="black", label="Receivers")
-plt.xlabel("Distance (m)")
-plt.ylabel("Amplitude")
-plt.legend()
-plt.show()
-```
-
-Change `spacing` from 15 to 5 m and compare the curves. Closer receivers improve spatial sampling; adding more receivers at the same spacing only extends the aperture.
-""")), active=[])
+        active=[])

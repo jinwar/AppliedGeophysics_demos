@@ -19,9 +19,9 @@ Create a Render Blueprint from this repository using `render.yaml`. It installs 
 
 ## Sampling and aliasing
 
-- Temporal view: one or two cosines, sampling interval, record duration, phase, reproducible Gaussian noise, ideal analog low-pass, sample points and one-sided FFT.
-- Spatial view: a horizontal monochromatic plane wave, receiver spacing, aperture, snapshot time, and signed apparent velocity.
-- Explore/Challenge modes, four presets, five guided questions, temporal CSV and complete parameter JSON downloads.
+- One temporal view with one or two cosines, sampling frequency in Hz, record duration, phase, reproducible Gaussian noise, ideal analog low-pass, sample points and one-sided FFT.
+- Four presets, optional model/alias reveal, temporal CSV and parameter JSON downloads.
+- Sampling frequency ranges from 20 to 1000 Hz (100 Hz by default); exported parameters include both frequency and the corresponding sampling interval.
 - Transparent NumPy forward models are separate from the Panel UI in `sampling_aliasing/model.py`.
 
 The orange curve is the analytically folded, noise-free baseband equivalent, not a numerical reconstruction or inversion. Signed folding preserves phase at every sample. Exactly Nyquist is deliberately demonstrated as ambiguous. The spectrum uses a rectangular window, no zero padding, and amplitude normalization (DC/Nyquist bins are not doubled). Requested record length is rounded to an integer sample count; FFT bin spacing is fs/N. The last sample is at (N−1)dt. Ideal filtering removes components at or above 0.45 fs before samples are taken; measurement noise is added after filtering. Spatial apparent velocity assumes continuous time and known positive temporal frequency.

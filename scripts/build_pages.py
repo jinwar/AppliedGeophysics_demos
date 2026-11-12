@@ -80,7 +80,7 @@ for stem, folder in [('sampling_browser', 'sampling_aliasing'), ('fourier_browse
 <small>APPLIED GEOPHYSICS II</small><h1>Interactive field laboratory</h1>
 <p>Change a physical model, inspect synthetic measurements, and test what the observations can resolve.</p>
 <article><small>LABORATORY 01</small><h2>Sampling &amp; aliasing</h2>
-<p>Explore sampling interval, record length, receiver spacing, and the different waves that can produce identical measurements.</p>
+<p>Explore sampling frequency, record length, and the different waves that can produce identical measurements.</p>
 <a href="sampling_browser.html">Open the laboratory →</a>
 <p><small>The first visit downloads the Python runtime. Allow a little time for the controls to become ready. Calculations run on your device.</small></p></article>
 <article><small>LABORATORY 02</small><h2>Fourier transform · sound laboratory</h2><p>Record a short sound, hear it back, and explore its waveform, frequency spectrum, and spectrogram.</p><a href="fourier_browser.html">Open the sound laboratory →</a><p><small>Microphone recording stays on your device. Example sounds and WAV uploads are also available.</small></p></article>
