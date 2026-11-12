@@ -36,7 +36,7 @@ converter.PANEL_CDN_WHL = panel_wheel.as_uri()
 def build_app(stem, folder):
     convert_app(
         f'{stem}.py', dest_path=str(OUT), runtime='pyodide-worker',
-        requirements=['numpy'],
+        requirements=['numpy', 'scipy'] if folder == 'filtering' else ['numpy'],
         resources=[str(p.relative_to(ROOT)) for folder in (folder, 'shared')
                    for p in (ROOT / folder).glob('*.py')],
         prerender=True,
@@ -69,7 +69,7 @@ def build_app(stem, folder):
     html.write_text(html.read_text().replace(f'{stem}.js', worker_name))
 
 
-for stem, folder in [('sampling_browser', 'sampling_aliasing'), ('fourier_browser', 'fourier_audio')]:
+for stem, folder in [('sampling_browser', 'sampling_aliasing'), ('fourier_browser', 'fourier_audio'), ('filtering_browser', 'filtering')]:
     build_app(stem, folder)
 (OUT / '.nojekyll').touch()
 (OUT / 'index.html').write_text('''<!doctype html>
@@ -84,5 +84,7 @@ for stem, folder in [('sampling_browser', 'sampling_aliasing'), ('fourier_browse
 <a href="sampling_browser.html">Open the laboratory →</a>
 <p><small>The first visit downloads the Python runtime. Allow a little time for the controls to become ready. Calculations run on your device.</small></p></article>
 <article><small>LABORATORY 02</small><h2>Fourier transform · sound laboratory</h2><p>Record a short sound, hear it back, and explore its waveform, frequency spectrum, and spectrogram.</p><a href="fourier_browser.html">Open the sound laboratory →</a><p><small>Microphone recording stays on your device. Example sounds and WAV uploads are also available.</small></p></article>
+<article><small>LABORATORY 03</small><h2>Filtering &amp; signal recovery</h2><p>Build a noisy measurement, design a filter, and discover what recovery preserves and what it damages.</p><a href="filtering_browser.html">Open the filtering laboratory →</a></article>
 <footer><small>Explore → Predict → Explain</small></footer></main></body></html>''')
 print(f'Static site built in {OUT}')
+

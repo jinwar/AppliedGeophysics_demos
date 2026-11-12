@@ -71,6 +71,25 @@ try:
         page.get_by_text('Source: Do–Re–Mi: piano and violin',exact=False).wait_for(timeout=30000)
         page.get_by_text('6.00 s ·',exact=False).wait_for(timeout=15000)
         print('Piano and violin sequence loaded and analyzed',flush=True)
+        page.goto('http://127.0.0.1:8012/filtering_browser.html',wait_until='domcontentloaded')
+        page.locator('#loader').wait_for(state='hidden',timeout=120000)
+        page.get_by_role('combobox',name='Experiment',exact=True).select_option(label='Narrowband interference')
+        page.get_by_role('button',name='Load experiment',exact=True).click()
+        page.get_by_text('Notch / band-stop · Butterworth',exact=False).wait_for(timeout=30000)
+        page.get_by_text('Challenge',exact=True).click()
+        page.get_by_role('button',name='Reveal clean signal',exact=True).click()
+        page.get_by_text('Recovery RMSE:',exact=False).wait_for(timeout=30000)
+        page.get_by_role('button',name='New noise realization',exact=True).click()
+        page.get_by_role('button',name='Reveal clean signal',exact=True).wait_for(timeout=30000)
+        with page.expect_download() as event:
+            page.get_by_role('button',name='Download data (CSV)',exact=True).click()
+        assert event.value.suggested_filename=='filtering_data.csv'
+        data=Path(event.value.path()).read_text()
+        assert 'clean' not in data.splitlines()[0], 'Challenge CSV must not reveal target'
+        page.get_by_role('combobox',name='Filter design',exact=True).select_option(label='Ideal sharp cutoff')
+        page.get_by_text('Noncausal zero-phase',exact=False).wait_for(timeout=30000)
+        print('Filtering presets, challenge reveal/reset, CSV and ideal response passed',flush=True)
         browser.close()
 finally:
     server.shutdown()
+

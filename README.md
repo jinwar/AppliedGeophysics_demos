@@ -84,3 +84,26 @@ FFT amplitude is one-sided and corrected for the selected window's coherent
 gain. STFT uses only complete windows; overlap changes the hop, not frequency
 resolution. Tests check known frequencies, amplitudes, sequential timing,
 chirp tracking, silence, WAV conversion, and duration limits.
+
+
+## Filtering and signal recovery
+
+The third lab (`filtering/`, entry point `filtering_browser.py`) synthesizes
+seismic pulses or sinusoidal mixtures with reproducible Gaussian noise, drift,
+and narrowband interference. It compares Butterworth low/high/band-pass and
+band-stop filters with an ideal sharp FFT mask. Controls expose cutoffs, order,
+and causal versus forward–backward processing. The plotted response includes
+the squared gain of forward–backward filtering. Ideal filtering uses a three-times
+zero-padded record and crops the result; boundary effects remain.
+
+Linked time views show measured, recovered, clean, and removed components.
+Spectra retain physical relative amplitudes. Full-record recovery RMSE/SNR
+include distortion and edges; first-event peak errors use a local matching window.
+Challenge mode hides truth and metrics until reveal, resets on parameter edits,
+and excludes clean data from CSV downloads until revealed. This is a teaching
+exercise, not secure assessment: the synthetic model is available to the browser.
+
+Four presets, expandable interpretation notes, a processing diagram, essential
+Python snippets, and CSV/JSON downloads are included. SciPy is loaded only for
+the filtering app in the browser. Static deployment follows the existing Pages
+workflow; the `/filtering` server route is also available.
