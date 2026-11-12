@@ -34,8 +34,8 @@ def create_app():
         slider('separation', 'Pulse separation (s)', .02, .4, .005),
         slider('frequency2', 'Second sinusoid (Hz)', 5, 150, 1),
         slider('amplitude2', 'Second amplitude', .1, 2, .1))
+    noise_level = slider('noise', 'Noise level (σ)', 0, 1, .02)
     noise_controls = pn.Column(
-        slider('noise', 'Random noise σ', 0, 1, .02),
         slider('drift', 'Drift amplitude', 0, 1.5, .05),
         slider('drift_frequency', 'Drift frequency (Hz)', .5, 10, .5),
         slider('interference', 'Interference amplitude', 0, 1.5, .05),
@@ -171,7 +171,7 @@ def create_app():
     load.on_click(load_preset)
     new_noise.on_click(lambda event: setattr(w['seed'], 'value', (w['seed'].value + 1) % 1000001))
     update()
-    sidebar = [pn.pane.Markdown('### Build a measurement'), preset, load,
+    sidebar = [pn.pane.Markdown('### Build a measurement'), preset, load, noise_level,
         pn.Accordion(('Signal', source_controls), ('Noise & interference', noise_controls), active=[0]),
         pn.pane.Markdown('### Recover the target'), filter_controls, apply, reveal]
     main = [pn.pane.Markdown('## Filtering & signal recovery\nDoes a cleaner-looking trace preserve the signal you want?'),
