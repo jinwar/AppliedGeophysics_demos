@@ -74,11 +74,15 @@ try:
         page.goto('http://127.0.0.1:8012/filtering_browser.html',wait_until='domcontentloaded')
         page.locator('#loader').wait_for(state='hidden',timeout=120000)
         page.get_by_role('combobox',name='Experiment',exact=True).select_option(label='Narrowband interference')
+        # The select's DOM value changes before the Python worker processes it.
+        # Wait for that round trip before clicking a button that reads the value.
+        page.wait_for_function('!pyodideWorker.busy && pyodideWorker.queue.length === 0')
         page.get_by_role('button',name='Load experiment',exact=True).click()
         page.get_by_text('Notch / band-stop · Butterworth',exact=False).wait_for(timeout=30000)
         page.get_by_text('Challenge',exact=True).click()
         page.get_by_role('button',name='Reveal clean signal',exact=True).click()
         page.get_by_text('Recovery RMSE:',exact=False).wait_for(timeout=30000)
+        page.get_by_text('Noise & interference',exact=True).click()
         page.get_by_role('button',name='New noise realization',exact=True).click()
         page.get_by_role('button',name='Reveal clean signal',exact=True).wait_for(timeout=30000)
         with page.expect_download() as event:
