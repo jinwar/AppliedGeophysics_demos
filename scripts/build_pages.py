@@ -36,9 +36,10 @@ converter.PANEL_CDN_WHL = panel_wheel.as_uri()
 def build_app(stem, folder):
     convert_app(
         f'{stem}.py', dest_path=str(OUT), runtime='pyodide-worker',
-        requirements=['numpy', 'scipy'] if folder == 'filtering' else ['numpy'],
+        requirements=['numpy', 'scipy'] if folder in ('filtering', 'tdem_sounding', 'fdem_sensitivity') else ['numpy'],
         resources=[str(p.relative_to(ROOT)) for folder in (folder, 'shared')
-                   for p in (ROOT / folder).glob('*.py')],
+                   for p in (ROOT / folder).rglob('*')
+                   if p.is_file() and (p.suffix in ('.py', '.md') or p.name in ('LICENSE', 'NOTICE'))],
         prerender=True,
     )
     required = [f'{stem}.html', f'{stem}.js', f'{stem}.resources.zip']
@@ -69,7 +70,7 @@ def build_app(stem, folder):
     html.write_text(html.read_text().replace(f'{stem}.js', worker_name))
 
 
-for stem, folder in [('sampling_browser', 'sampling_aliasing'), ('fourier_browser', 'fourier_audio'), ('filtering_browser', 'filtering')]:
+for stem, folder in [('sampling_browser', 'sampling_aliasing'), ('fourier_browser', 'fourier_audio'), ('filtering_browser', 'filtering'), ('tdem_browser', 'tdem_sounding'), ('fdem_browser', 'fdem_sensitivity')]:
     build_app(stem, folder)
 (OUT / '.nojekyll').touch()
 (OUT / 'index.html').write_text('''<!doctype html>
@@ -85,6 +86,8 @@ for stem, folder in [('sampling_browser', 'sampling_aliasing'), ('fourier_browse
 <p><small>The first visit downloads the Python runtime. Allow a little time for the controls to become ready. Calculations run on your device.</small></p></article>
 <article><small>LABORATORY 02</small><h2>Fourier transform · sound laboratory</h2><p>Record a short sound, hear it back, and explore its waveform, frequency spectrum, and spectrogram.</p><a href="fourier_browser.html">Open the sound laboratory →</a><p><small>Microphone recording stays on your device. Example sounds and WAV uploads are also available.</small></p></article>
 <article><small>LABORATORY 03</small><h2>Filtering &amp; signal recovery</h2><p>Build a noisy measurement, design a filter, and discover what recovery preserves and what it damages.</p><a href="filtering_browser.html">Open the filtering laboratory →</a></article>
+<article><small>LABORATORY 04 · WEEKS 3–4</small><h2>TDEM sounding</h2><p>Explore EM diffusion, loop size, time gates, and non-unique layered-earth fits.</p><a href="tdem_browser.html">Open the TDEM laboratory →</a></article>
+<article><small>LABORATORY 05 · WEEK 5</small><h2>FDEM depth sensitivity</h2><p>Compare coil geometries, in-phase and quadrature responses, and apparent conductivity.</p><a href="fdem_browser.html">Open the FDEM laboratory →</a></article>
 <footer><small>Explore → Predict → Explain</small></footer></main></body></html>''')
 print(f'Static site built in {OUT}')
 
