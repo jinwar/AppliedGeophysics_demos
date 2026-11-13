@@ -136,6 +136,29 @@ try:
         page.get_by_role('combobox',name='Experiment',exact=True).select_option(label='Well sampled')
         page.get_by_text('Sampling frequency: 200.0 Hz',exact=False).wait_for(timeout=30000)
         print('Sampling frequency control, CSV, presets and simplified layout passed',flush=True)
+        for kind, title in [('tdem', 'TDEM sounding'), ('fdem', 'FDEM depth sensitivity')]:
+            page.goto(f'http://127.0.0.1:8012/{kind}_browser.html',wait_until='domcontentloaded')
+            page.locator('#loader').wait_for(state='hidden',timeout=180000)
+            page.get_by_role('combobox',name='Mode',exact=True).select_option(label='Challenge')
+            page.get_by_text('Challenge · Weighted RMS misfit:',exact=False).wait_for(timeout=30000)
+            page.wait_for_function(f"Bokeh.documents.filter(d => d.get_model_by_name('{kind}_earth_truth')).at(-1).get_model_by_name('{kind}_earth_truth').data.depth.length === 0")
+            with page.expect_download() as event:
+                page.get_by_role('button',name='Download measurements (CSV)',exact=True).click()
+            text=Path(event.value.path()).read_text()
+            assert 'clean' not in text.splitlines()[0]
+            assert len(text.splitlines()) > 8
+            page.get_by_role('button',name='Fit trial model to measurements',exact=True).click()
+            page.get_by_text('Fit converged.',exact=False).wait_for(timeout=180000)
+            page.get_by_role('button',name='Calculate sensitivity',exact=True).click()
+            page.wait_for_function(f"Bokeh.documents.filter(d => d.get_model_by_name('{kind}_sensitivity')).at(-1).get_model_by_name('{kind}_sensitivity').data.top.length > 0",timeout=60000)
+            page.get_by_role('button',name='Reveal earth model',exact=True).click()
+            page.wait_for_function(f"Bokeh.documents.filter(d => d.get_model_by_name('{kind}_earth_truth')).at(-1).get_model_by_name('{kind}_earth_truth').data.depth.length === 4")
+            if kind == 'fdem':
+                page.get_by_role('combobox',name='Coil orientation',exact=True).select_option(label='VCP · horizontal magnetic dipoles')
+                page.wait_for_function('!pyodideWorker.busy && pyodideWorker.queue.length === 0')
+            page.get_by_role('button',name='Reset laboratory',exact=True).click()
+            page.get_by_text('Explore · Weighted RMS misfit:',exact=False).wait_for(timeout=30000)
+            print(f'{title}: worker, challenge, download, fit, sensitivity and reset passed',flush=True)
         browser.close()
 finally:
     server.shutdown()

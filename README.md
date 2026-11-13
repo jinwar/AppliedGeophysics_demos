@@ -111,3 +111,56 @@ Four presets, expandable interpretation notes, a processing diagram, essential
 Python snippets, and CSV/JSON downloads are included. SciPy is loaded only for
 the filtering app in the browser. Static deployment follows the existing Pages
 workflow; the `/filtering` server route is also available.
+
+## TDEM sounding and FDEM depth sensitivity
+
+These two course labs implement the model → measurement → interpretation workflow
+from **Course Outline and App list**: TDEM supports weeks 3–4; FDEM supports week 5.
+They run entirely in the browser through the existing Panel/Pyodide GitHub Pages
+build. No simulation server, account, API key, or SimPEG installation is required.
+
+- `tdem_sounding/`, browser entry point `tdem_browser.py`, server route
+  `/tdem-sounding`: central square-loop step-off sounding, adjustable loop side,
+  current, time range and gate count; induced voltage and weighted residuals.
+- `fdem_sensitivity/`, browser entry point `fdem_browser.py`, server route
+  `/fdem-sensitivity`: HCP/VCP dipole configurations, spacing and frequency range;
+  in-phase and quadrature, LIN apparent conductivity and depth-weighting overlays.
+- Both offer two-layer conductivity/thickness controls, four resettable cases,
+  reproducible noise, Explore/Challenge modes, an independently adjustable trial
+  earth, bounded nonlinear least-squares fitting, finite-difference sensitivity,
+  interpretation prompts, and CSV/JSON exports. Challenge exports omit the earth
+  and clean responses until revealed. This is a teaching aid, not exam security.
+
+**Simulation engine:** the NumPy/SciPy core of `empymod==1.10.6`, vendored in
+`shared/empymod_numpy/` with Apache-2.0 license, notices, and documented namespace
+and NumPy 2 compatibility edits. This pre-Numba release avoids a compiled JIT
+requirement in Pyodide. It is deliberately pinned and is not current empymod.
+SimPEG 0.26.0 is used only to generate independent numerical test fixtures;
+`python scripts/generate_em_references.py` requires that optional development
+package. Normal tests use committed fixtures without importing SimPEG.
+
+Both solvers use quasistatic, isotropic, nonmagnetic horizontal layers, one finite
+layer above a half-space, 0.1 m instrument height, and negligible air conductivity.
+Displacement currents, IP, lateral structure, and instrument electronics are
+excluded. TDEM assumes instantaneous switch-off and a 1 m² effective receiver
+area; gates are point samples, not time averages. Five Gauss points integrate one
+side of the square loop and symmetry supplies the other three. TDEM's log plot
+shows absolute voltage; fitting and exported data preserve signs. FDEM uses full
+layered-earth responses, not LIN kernels, for both simulation and fitting. LIN
+apparent conductivity and zero-height kernels are explicitly labeled teaching
+approximations; their failure at higher induction numbers is part of the lesson.
+
+Noise standard deviation is the larger of relative noise and 0.1% of the global
+peak response. At zero noise the observations are exactly clean, while the floor
+remains for fitting weights. Fitting uses log conductivity and thickness, bounds
+1–300 mS/m and 1–100 m, and at most 35 optimizer evaluations (finite-difference
+calls are additional). A local optimum is not proof of uniqueness. Sensitivities
+are derivatives with respect to log parameters at the trial model divided by
+measurement uncertainty; they are not depth-of-investigation boundaries.
+
+Validation covers all four earth presets against independent SimPEG TDEM and
+both FDEM orientations (0.3% relative tolerance plus a small absolute tolerance),
+homogeneous-layer invariance, current scaling, late-time TEM decay, FDEM LIN
+limits, normalized depth kernels, noise-free recovery, session isolation, hidden
+truth exports, and invalid acquisitions. The Pages browser test also exercises
+both Pyodide workers, fitting, sensitivity, downloads, and challenge/reset flows.
